@@ -314,12 +314,7 @@ def build_pdf(filename):
     story = []
     
     # ------------------ HEADER SECTION ------------------
-    avatar_table = Table([[create_avatar_placeholder()]], colWidths=[60])
-    avatar_table.setStyle(TableStyle([
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-    ]))
-    story.append(avatar_table)
+
     
     story.append(Paragraph("K Y A W T &nbsp; M A Y &nbsp; H L A I N G &nbsp; ( P I N K Y )", title_style))
     
