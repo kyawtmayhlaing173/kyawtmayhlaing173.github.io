@@ -1,4 +1,5 @@
 import os
+import random
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.colors import HexColor
 from reportlab.lib.enums import TA_RIGHT
@@ -6,6 +7,68 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfgen import canvas
 from reportlab.graphics.shapes import Drawing, Rect, Circle, Line, Polygon, String
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+# --- REGISTER HANDWRITTEN FONT FAMILY ---
+# Maps ArchitectsDaughter to all styles to prevent ReportLab from crashing when encountering bold/italic tags
+font_path = os.path.join(os.path.dirname(__file__), "ArchitectsDaughter-Regular.ttf")
+pdfmetrics.registerFont(TTFont('ArchitectsDaughter', font_path))
+pdfmetrics.registerFont(TTFont('ArchitectsDaughter-Bold', font_path))
+pdfmetrics.registerFont(TTFont('ArchitectsDaughter-Oblique', font_path))
+pdfmetrics.registerFont(TTFont('ArchitectsDaughter-BoldOblique', font_path))
+
+pdfmetrics.registerFontFamily(
+    'ArchitectsDaughter',
+    normal='ArchitectsDaughter',
+    bold='ArchitectsDaughter-Bold',
+    italic='ArchitectsDaughter-Oblique',
+    boldItalic='ArchitectsDaughter-BoldOblique'
+)
+
+# --- EXCALIDRAW SKETCHY DRAWING HELPERS ---
+def draw_sketchy_line(canvas_obj, x1, y1, x2, y2, color, width=1.2):
+    canvas_obj.saveState()
+    canvas_obj.setStrokeColor(color)
+    canvas_obj.setLineWidth(width)
+    
+    # Draw two slightly offset overlapping lines with wobbly midpoints
+    for offset in [(-0.6, 0.4), (0.6, -0.4)]:
+        dx = x2 - x1
+        dy = y2 - y1
+        
+        # Calculate intermediate points with random offset
+        x_mid1 = x1 + dx * 0.35 + random.uniform(-0.8, 0.8)
+        y_mid1 = y1 + dy * 0.35 + random.uniform(-0.8, 0.8)
+        
+        x_mid2 = x1 + dx * 0.70 + random.uniform(-0.8, 0.8)
+        y_mid2 = y1 + dy * 0.70 + random.uniform(-0.8, 0.8)
+        
+        p = canvas_obj.beginPath()
+        p.moveTo(x1 + offset[0], y1 + offset[1])
+        p.lineTo(x_mid1, y_mid1)
+        p.lineTo(x_mid2, y_mid2)
+        p.lineTo(x2 + offset[1], y2 + offset[0])
+        canvas_obj.drawPath(p)
+        
+    canvas_obj.restoreState()
+
+def draw_sketchy_circle(canvas_obj, x, y, r, fillColor, strokeColor, width=1.2):
+    canvas_obj.saveState()
+    canvas_obj.setFillColor(fillColor)
+    canvas_obj.setStrokeColor(strokeColor)
+    canvas_obj.setLineWidth(width)
+    
+    # Fill solid inner node slightly smaller
+    canvas_obj.circle(x, y, r - 0.5, fill=True, stroke=False)
+    
+    # Draw wobbly double stroke ellipses
+    for offset in [0.4, -0.4]:
+        rx = r + random.uniform(-0.5, 0.5)
+        ry = r + random.uniform(-0.5, 0.5)
+        canvas_obj.ellipse(x - rx + offset, y - ry + offset, x + rx + offset, y + ry + offset, fill=False, stroke=True)
+        
+    canvas_obj.restoreState()
 
 # --- CUSTOM DYNAMIC TIMELINE FLOWABLE ---
 class TimelineLine(Flowable):
@@ -20,29 +83,17 @@ class TimelineLine(Flowable):
         return self.width, 0
 
     def draw(self):
-        self.canv.saveState()
-        
         # Center coordinates
         x_center = self.width / 2.0
-        
-        # 1. Draw vertical timeline line
-        self.canv.setStrokeColor(HexColor('#6366f1'))
-        self.canv.setLineWidth(1.5)
         
         y_start = 0 if not self.is_end else self.height - 10
         y_end = self.height if not self.is_start else self.height - 10
         
-        self.canv.line(x_center, y_start, x_center, y_end)
+        # 1. Draw sketchy vertical line
+        draw_sketchy_line(self.canv, x_center, y_start, x_center, y_end, HexColor('#6366f1'), width=1.2)
         
-        # 2. Draw glow behind node circle
-        self.canv.setFillColor(HexColor('#14b8a6'))
-        self.canv.setStrokeColor(HexColor('#05050b'))
-        self.canv.setLineWidth(1.5)
-        
-        # Draw accent node circle
-        self.canv.circle(x_center, self.height - 10, 4.5, fill=True, stroke=True)
-        
-        self.canv.restoreState()
+        # 2. Draw sketchy circle node
+        draw_sketchy_circle(self.canv, x_center, self.height - 10, 4.5, HexColor('#14b8a6'), HexColor('#05050b'), width=1.2)
 
 # --- CUSTOM SHARP VECTOR ICONS ---
 def create_email_icon():
@@ -55,13 +106,13 @@ def create_email_icon():
 def create_linkedin_icon():
     d = Drawing(12, 12)
     d.add(Rect(0, 1, 11, 11, fillColor=HexColor('#6366f1'), strokeColor=None, rx=1.5, ry=1.5))
-    d.add(String(2, 4.2, "in", fontName="Helvetica-Bold", fontSize=8, fillColor=HexColor('#05050b')))
+    d.add(String(2, 4.2, "in", fontName="ArchitectsDaughter-Bold", fontSize=8, fillColor=HexColor('#05050b')))
     return d
 
 def create_github_icon():
     d = Drawing(12, 12)
     d.add(Circle(6, 6, 5.5, fillColor=HexColor('#14b8a6'), strokeColor=None))
-    d.add(String(3.2, 4, "git", fontName="Helvetica-Bold", fontSize=5.5, fillColor=HexColor('#05050b')))
+    d.add(String(3.2, 4, "git", fontName="ArchitectsDaughter-Bold", fontSize=5.5, fillColor=HexColor('#05050b')))
     return d
 
 def create_location_icon():
@@ -110,17 +161,12 @@ class NumberedCanvas(canvas.Canvas):
     def draw_page_decorations(self, page_count):
         self.saveState()
         
-        # 1. Draw subtle border highlight glow
-        self.setStrokeColor(HexColor('#14b8a6'))
-        self.setLineWidth(1)
-        # Left accent border glow
-        self.line(15, 15, 15, self._pagesize[1] - 15)
-        self.setStrokeColor(HexColor('#6366f1'))
-        # Top accent border glow
-        self.line(15, self._pagesize[1] - 15, self._pagesize[0] - 15, self._pagesize[1] - 15)
+        # 1. Draw sketchy border highlight glow (Excalidraw style)
+        draw_sketchy_line(self, 15, 15, 15, self._pagesize[1] - 15, HexColor('#14b8a6'), width=1)
+        draw_sketchy_line(self, 15, self._pagesize[1] - 15, self._pagesize[0] - 15, self._pagesize[1] - 15, HexColor('#6366f1'), width=1)
         
         # 2. Draw page numbers at the bottom right
-        self.setFont("Helvetica", 8)
+        self.setFont("ArchitectsDaughter", 8)
         self.setFillColor(HexColor('#64748b'))
         page_text = f"Page {self._pageNumber} of {page_count}"
         self.drawRightString(self._pagesize[0] - 40, 25, page_text)
@@ -150,11 +196,11 @@ def build_pdf(filename):
     off_white = HexColor('#f8fafc')
     slate_grey = HexColor('#94a3b8')
     
-    # Custom Paragraph Styles
+    # Custom Paragraph Styles (Using ArchitectsDaughter)
     title_style = ParagraphStyle(
         'NameHeader',
         parent=styles['Heading1'],
-        fontName='Helvetica-Bold',
+        fontName='ArchitectsDaughter-Bold',
         fontSize=28,
         leading=32,
         textColor=teal,
@@ -164,7 +210,7 @@ def build_pdf(filename):
     subtitle_style = ParagraphStyle(
         'RoleHeader',
         parent=styles['Normal'],
-        fontName='Helvetica-Bold',
+        fontName='ArchitectsDaughter-Bold',
         fontSize=13,
         leading=15,
         textColor=indigo,
@@ -174,7 +220,7 @@ def build_pdf(filename):
     contact_style = ParagraphStyle(
         'ContactText',
         parent=styles['Normal'],
-        fontName='Helvetica',
+        fontName='ArchitectsDaughter',
         fontSize=9,
         leading=12,
         textColor=slate_grey
@@ -183,7 +229,7 @@ def build_pdf(filename):
     section_title_style = ParagraphStyle(
         'SectionTitle',
         parent=styles['Heading2'],
-        fontName='Helvetica-Bold',
+        fontName='ArchitectsDaughter-Bold',
         fontSize=13,
         leading=15,
         textColor=teal,
@@ -195,7 +241,7 @@ def build_pdf(filename):
     date_style = ParagraphStyle(
         'DateColText',
         parent=styles['Normal'],
-        fontName='Helvetica-Bold',
+        fontName='ArchitectsDaughter-Bold',
         fontSize=9,
         leading=13,
         textColor=slate_grey,
@@ -205,17 +251,17 @@ def build_pdf(filename):
     exp_detail_style = ParagraphStyle(
         'ExpDetailText',
         parent=styles['Normal'],
-        fontName='Helvetica',
+        fontName='ArchitectsDaughter',
         fontSize=9.2,
         leading=14.5,
         textColor=slate_grey,
-        spaceAfter=12  # Handles spacing between consecutive tables when cell padding is 0
+        spaceAfter=12
     )
     
     norm_text_style = ParagraphStyle(
         'NormalText',
         parent=styles['Normal'],
-        fontName='Helvetica',
+        fontName='ArchitectsDaughter',
         fontSize=9.5,
         leading=15,
         textColor=slate_grey,
@@ -225,7 +271,7 @@ def build_pdf(filename):
     skills_label_style = ParagraphStyle(
         'SkillsLabel',
         parent=styles['Normal'],
-        fontName='Helvetica-Bold',
+        fontName='ArchitectsDaughter-Bold',
         fontSize=9.5,
         leading=15,
         textColor=off_white
@@ -252,7 +298,7 @@ def build_pdf(filename):
         [
             make_contact_item(create_location_icon, "Tokyo, Japan", contact_style),
             make_contact_item(create_website_icon, portfolio_html, contact_style),
-            Paragraph("", contact_style)  # Empty cell for layout balance
+            Paragraph("", contact_style)
         ]
     ]
     contacts_table = Table(contacts_table_data, colWidths=[180, 220, 132])
@@ -510,13 +556,13 @@ def build_pdf(filename):
     story.append(Paragraph(" &nbsp;•&nbsp; ".join(langs), norm_text_style))
     
     # Build the background rendering callback
-    def draw_background(canvas, doc):
-        canvas.saveState()
-        canvas.setFillColor(HexColor('#05050b'))
-        canvas.rect(0, 0, doc.pagesize[0], doc.pagesize[1], fill=True, stroke=False)
-        canvas.restoreState()
+    def draw_background(canvas_obj, doc_obj):
+        canvas_obj.saveState()
+        canvas_obj.setFillColor(HexColor('#05050b'))
+        canvas_obj.rect(0, 0, doc_obj.pagesize[0], doc_obj.pagesize[1], fill=True, stroke=False)
+        canvas_obj.restoreState()
 
-    # Build the document with two-pass canvasmaker to compute total pages dynamically
+    # Build the document
     doc.build(story, onFirstPage=draw_background, onLaterPages=draw_background, canvasmaker=NumberedCanvas)
 
 if __name__ == "__main__":
