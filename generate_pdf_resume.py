@@ -1,10 +1,95 @@
 import os
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.colors import HexColor
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, KeepTogether
+from reportlab.lib.enums import TA_RIGHT
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, KeepTogether, Flowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfgen import canvas
+from reportlab.graphics.shapes import Drawing, Rect, Circle, Line, Polygon, String
 
+# --- CUSTOM DYNAMIC TIMELINE FLOWABLE ---
+class TimelineLine(Flowable):
+    def __init__(self, width=20, is_start=False, is_end=False):
+        super(TimelineLine, self).__init__()
+        self.width = width
+        self.is_start = is_start
+        self.is_end = is_end
+
+    def wrap(self, availWidth, availHeight):
+        # Return height of 0 so ReportLab's table engine sizes the row height based on text contents
+        return self.width, 0
+
+    def draw(self):
+        self.canv.saveState()
+        
+        # Center coordinates
+        x_center = self.width / 2.0
+        
+        # 1. Draw vertical timeline line
+        self.canv.setStrokeColor(HexColor('#6366f1'))
+        self.canv.setLineWidth(1.5)
+        
+        y_start = 0 if not self.is_end else self.height - 10
+        y_end = self.height if not self.is_start else self.height - 10
+        
+        self.canv.line(x_center, y_start, x_center, y_end)
+        
+        # 2. Draw glow behind node circle
+        self.canv.setFillColor(HexColor('#14b8a6'))
+        self.canv.setStrokeColor(HexColor('#05050b'))
+        self.canv.setLineWidth(1.5)
+        
+        # Draw accent node circle
+        self.canv.circle(x_center, self.height - 10, 4.5, fill=True, stroke=True)
+        
+        self.canv.restoreState()
+
+# --- CUSTOM SHARP VECTOR ICONS ---
+def create_email_icon():
+    d = Drawing(12, 12)
+    d.add(Rect(1, 2, 10, 8, fillColor=None, strokeColor=HexColor('#14b8a6'), strokeWidth=0.8, rx=0.8, ry=0.8))
+    d.add(Line(1, 2, 6, 6, strokeColor=HexColor('#14b8a6'), strokeWidth=0.8))
+    d.add(Line(11, 2, 6, 6, strokeColor=HexColor('#14b8a6'), strokeWidth=0.8))
+    return d
+
+def create_linkedin_icon():
+    d = Drawing(12, 12)
+    d.add(Rect(0, 1, 11, 11, fillColor=HexColor('#6366f1'), strokeColor=None, rx=1.5, ry=1.5))
+    d.add(String(2, 4.2, "in", fontName="Helvetica-Bold", fontSize=8, fillColor=HexColor('#05050b')))
+    return d
+
+def create_github_icon():
+    d = Drawing(12, 12)
+    d.add(Circle(6, 6, 5.5, fillColor=HexColor('#14b8a6'), strokeColor=None))
+    d.add(String(3.2, 4, "git", fontName="Helvetica-Bold", fontSize=5.5, fillColor=HexColor('#05050b')))
+    return d
+
+def create_location_icon():
+    d = Drawing(12, 12)
+    d.add(Circle(6, 7.5, 3.2, fillColor=None, strokeColor=HexColor('#14b8a6'), strokeWidth=0.8))
+    d.add(Circle(6, 7.5, 1, fillColor=HexColor('#14b8a6'), strokeColor=None))
+    d.add(Polygon([3, 5.5, 6, 0.5, 9, 5.5], fillColor=HexColor('#14b8a6'), strokeColor=None))
+    return d
+
+def create_website_icon():
+    d = Drawing(12, 12)
+    d.add(Circle(6, 6, 5.5, fillColor=None, strokeColor=HexColor('#14b8a6'), strokeWidth=0.8))
+    d.add(Line(0.5, 6, 11.5, 6, strokeColor=HexColor('#14b8a6'), strokeWidth=0.6))
+    d.add(Circle(6, 6, 2.2, fillColor=None, strokeColor=HexColor('#14b8a6'), strokeWidth=0.6))
+    return d
+
+def make_contact_item(icon_func, text, style):
+    t = Table([[icon_func(), Paragraph(text, style)]], colWidths=[15, None])
+    t.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+    ]))
+    return t
+
+# --- NUMBERED CANVAS (PAGINATION LAYER) ---
 class NumberedCanvas(canvas.Canvas):
     def __init__(self, *args, **kwargs):
         super(NumberedCanvas, self).__init__(*args, **kwargs)
@@ -34,19 +119,20 @@ class NumberedCanvas(canvas.Canvas):
         # Top accent border glow
         self.line(15, self._pagesize[1] - 15, self._pagesize[0] - 15, self._pagesize[1] - 15)
         
-        # 3. Draw page numbers at the bottom right
+        # 2. Draw page numbers at the bottom right
         self.setFont("Helvetica", 8)
         self.setFillColor(HexColor('#64748b'))
         page_text = f"Page {self._pageNumber} of {page_count}"
-        self.drawRightString(self._pagesize[0] - 40, 30, page_text)
+        self.drawRightString(self._pagesize[0] - 40, 25, page_text)
         
-        # 4. Draw footer branding text
-        self.drawString(40, 30, "Kyawt May Hlaing — Portfolio Resume (kyawtmayhlaing173.github.io)")
+        # 3. Draw footer branding text
+        self.drawString(40, 25, "Kyawt May Hlaing — Portfolio Resume (kyawtmayhlaing173.github.io)")
         
         self.restoreState()
 
+# --- PDF BUILD ENGINE ---
 def build_pdf(filename):
-    # Setup document: margins of 0.5 in (36pt) for a dense, professional tech resume layout
+    # Setup document: margins of 40pt for a clean, professional tech resume layout
     doc = SimpleDocTemplate(
         filename,
         pagesize=letter,
@@ -63,15 +149,14 @@ def build_pdf(filename):
     indigo = HexColor('#6366f1')
     off_white = HexColor('#f8fafc')
     slate_grey = HexColor('#94a3b8')
-    dark_grey = HexColor('#475569')
     
     # Custom Paragraph Styles
     title_style = ParagraphStyle(
         'NameHeader',
         parent=styles['Heading1'],
         fontName='Helvetica-Bold',
-        fontSize=26,
-        leading=30,
+        fontSize=28,
+        leading=32,
         textColor=teal,
         spaceAfter=2
     )
@@ -80,8 +165,8 @@ def build_pdf(filename):
         'RoleHeader',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=12,
-        leading=14,
+        fontSize=13,
+        leading=15,
         textColor=indigo,
         spaceAfter=8
     )
@@ -90,76 +175,60 @@ def build_pdf(filename):
         'ContactText',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=8,
-        leading=11,
-        textColor=slate_grey,
-        spaceAfter=15
+        fontSize=9,
+        leading=12,
+        textColor=slate_grey
     )
     
     section_title_style = ParagraphStyle(
         'SectionTitle',
         parent=styles['Heading2'],
         fontName='Helvetica-Bold',
-        fontSize=12,
-        leading=14,
+        fontSize=13,
+        leading=15,
         textColor=teal,
-        spaceBefore=12,
-        spaceAfter=4,
+        spaceBefore=14,
+        spaceAfter=6,
         keepWithNext=True
     )
     
-    comp_title_style = ParagraphStyle(
-        'CompanyTitle',
-        parent=styles['Heading3'],
-        fontName='Helvetica-Bold',
-        fontSize=10,
-        leading=12,
-        textColor=off_white,
-        spaceBefore=4,
-        spaceAfter=2,
-        keepWithNext=True
-    )
-    
-    role_title_style = ParagraphStyle(
-        'RoleTitle',
+    date_style = ParagraphStyle(
+        'DateColText',
         parent=styles['Normal'],
-        fontName='Helvetica-Oblique',
-        fontSize=9.5,
-        leading=11,
-        textColor=indigo,
-        spaceAfter=4,
-        keepWithNext=True
+        fontName='Helvetica-Bold',
+        fontSize=9,
+        leading=13,
+        textColor=slate_grey,
+        alignment=TA_RIGHT
     )
     
-    bullet_style = ParagraphStyle(
-        'BulletPoint',
+    exp_detail_style = ParagraphStyle(
+        'ExpDetailText',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=8.5,
-        leading=11.5,
+        fontSize=9.2,
+        leading=14.5,
         textColor=slate_grey,
-        leftIndent=12,
-        firstLineIndent=-8,
-        spaceAfter=2
-    )
-    
-    tag_style = ParagraphStyle(
-        'TechTag',
-        parent=styles['Normal'],
-        fontName='Helvetica-Bold',
-        fontSize=7.5,
-        leading=9,
-        textColor=teal
+        spaceAfter=6
     )
     
     norm_text_style = ParagraphStyle(
         'NormalText',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=8.5,
-        leading=11.5,
+        fontSize=9.5,
+        leading=15,
         textColor=slate_grey,
         spaceAfter=4
+    )
+    
+    skills_label_style = ParagraphStyle(
+        'SkillsLabel',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=9.5,
+        leading=15,
+        textColor=off_white
     )
     
     story = []
@@ -168,141 +237,213 @@ def build_pdf(filename):
     story.append(Paragraph("KYAWT MAY HLAING", title_style))
     story.append(Paragraph("SENIOR MOBILE ENGINEER", subtitle_style))
     
-    contacts = [
-        "<b>Email:</b> pinky.hlaing173@gmail.com",
-        "<b>LinkedIn:</b> linkedin.com/in/kyawt-may-hlaing-4623aaab",
-        "<b>GitHub:</b> github.com/kyawtmayhlaing173",
-        "<b>Location:</b> Tokyo, Japan",
-        "<b>Portfolio:</b> kyawtmayhlaing173.github.io"
+    # Contact Information Grid
+    contacts_table_data = [
+        [
+            make_contact_item(create_email_icon, "pinky.hlaing173@gmail.com", contact_style),
+            make_contact_item(create_linkedin_icon, "linkedin.com/in/kyawt-may-hlaing-4623aaab", contact_style),
+            make_contact_item(create_github_icon, "github.com/kyawtmayhlaing173", contact_style)
+        ],
+        [
+            make_contact_item(create_location_icon, "Tokyo, Japan", contact_style),
+            make_contact_item(create_website_icon, "kyawtmayhlaing173.github.io", contact_style),
+            Paragraph("", contact_style)  # Empty cell for layout balance
+        ]
     ]
-    contact_p = Paragraph(" | ".join(contacts), contact_style)
-    story.append(contact_p)
+    contacts_table = Table(contacts_table_data, colWidths=[180, 220, 132])
+    contacts_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
+    story.append(contacts_table)
+    story.append(Spacer(1, 4))
     
     # ------------------ PROFILE SUMMARY ------------------
     story.append(Paragraph("PROFESSIONAL SUMMARY", section_title_style))
     summary_text = (
         "Result-driven, details-oriented Senior Mobile Engineer with over <b>7 years</b> of experience in designing, "
         "developing, and optimizing high-performance iOS and Android applications. Expert in <b>SwiftUI, Flutter, and Swift</b>, "
-        "with a proven track record of orchestrating payment system migrations, building CI/CD deployment automation Pipelines, "
+        "with a proven track record of orchestrating payment system migrations, building CI/CD deployment automation pipelines, "
         "and managing real-time chat infrastructures. Certified <b>AWS Solutions Architect</b> with deep full-stack proficiency "
         "in NodeJS, TypeScript, Firebase, and scalable cloud systems."
     )
     story.append(Paragraph(summary_text, norm_text_style))
     story.append(Spacer(1, 4))
     
-    # ------------------ WORK EXPERIENCE ------------------
-    story.append(Paragraph("PROFESSIONAL EXPERIENCE", section_title_style))
-    
     # 1. AMPTALK
-    amptalk_title = (
-        "<font color='#f8fafc'><b>Amptalk</b></font> &nbsp;|&nbsp; "
-        "<font color='#14b8a6'><b>Senior Mobile Engineer</b></font> &nbsp;|&nbsp; "
-        "<font color='#64748b'>Tokyo, Japan (Aug 2025 - Present)</font>"
-    )
-    story.append(Paragraph(amptalk_title, comp_title_style))
-    story.append(Paragraph("• Spearheaded the development of VoIP communication software integration in iOS using Swift and Flutter.", bullet_style))
-    story.append(Paragraph("• Scaled client-side audio streaming pipelines, integrating audio session guidelines for smooth call handoffs.", bullet_style))
-    story.append(Paragraph("• Deployed cloud backend integration modules utilizing Node.js, Typescript, and AWS.", bullet_style))
-    story.append(Paragraph("<b>Technologies:</b> Flutter, Dart, Swift, Firebase, AWS, Node.js, TypeScript", tag_style))
-    story.append(Spacer(1, 6))
+    exp1_data = [[
+        Paragraph("<b>Aug 2025 -<br/>Present</b><br/><font color='#64748b'>Tokyo, Japan</font>", date_style),
+        TimelineLine(width=20, is_start=True),
+        Paragraph(
+            "<b><font size='11.5' color='#f8fafc'>Amptalk</font></b> &nbsp;|&nbsp; <font color='#14b8a6'><b>Senior Mobile Engineer</b></font><br/>"
+            "• Spearheaded the development of VoIP communication software integration in iOS using Swift and Flutter.<br/>"
+            "• Scaled client-side audio streaming pipelines, integrating audio session guidelines for smooth call handoffs.<br/>"
+            "• Deployed cloud backend integration modules utilizing Node.js, Typescript, and AWS.<br/>"
+            "<b>Technologies:</b> Flutter, Dart, Swift, Firebase, AWS, Node.js, TypeScript",
+            exp_detail_style
+        )
+    ]]
+    exp1_table = Table(exp1_data, colWidths=[90, 20, 422])
+    exp1_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
+    story.append(exp1_table)
     
-    # 2. OPN THAILAND
-    opn_title = (
-        "<font color='#f8fafc'><b>Opn Thailand</b> (formerly Omise)</font> &nbsp;|&nbsp; "
-        "<font color='#64748b'>Bangkok, Thailand (Jul 2022 - Jul 2025)</font>"
-    )
-    story.append(Paragraph(opn_title, comp_title_style))
-    
-    # Promoted Role
-    story.append(Paragraph("Senior Mobile Engineer &nbsp;<font color='#64748b' size='8'>(Promoted Jul 2024 - Jul 2025)</font>", role_title_style))
-    story.append(Paragraph("• Architected payment SDK systems handling multi-million dollar transactions for enterprise clients in Southeast Asia.", bullet_style))
-    story.append(Paragraph("• Led migrations of legacy UI platforms to SwiftUI, resolving core layout threads and reducing render times by 20%.", bullet_style))
-    story.append(Paragraph("• Configured DevOps pipelines via Fastlane and GitHub Actions, cutting delivery cycles to TestFlight and Play Store by 40%.", bullet_style))
-    story.append(Paragraph("• Supervised mobile engineering standards, conducting reviews, writing modular frameworks, and onboarding new staff.", bullet_style))
-    
-    # Junior Role
-    story.append(Paragraph("Software Engineer &nbsp;<font color='#64748b' size='8'>(Jul 2022 - Jun 2024)</font>", role_title_style))
-    story.append(Paragraph("• Integrated secure card tokenization modules matching PCI-DSS compliance specifications across regional APIs.", bullet_style))
-    story.append(Paragraph("• Programmed core components for native iOS payment SDKs, maintaining robust offline safety nets.", bullet_style))
-    story.append(Paragraph("• Deployed and maintained Firebase push notification suites and Firestore real-time client databases.", bullet_style))
-    story.append(Paragraph("<b>Technologies:</b> SwiftUI, Swift, Firebase, Firestore, REST APIs, Fastlane, CI/CD, Git", tag_style))
-    story.append(Spacer(1, 6))
-    
-    # 3. ONE ATKHYAR
-    oneatkhyar_title = (
-        "<font color='#f8fafc'><b>One Atkhyar</b></font> &nbsp;|&nbsp; "
-        "<font color='#14b8a6'><b>Mobile Engineer</b></font> &nbsp;|&nbsp; "
-        "<font color='#64748b'>Yangon, Myanmar (Mar 2019 - Jun 2022)</font>"
-    )
-    story.append(Paragraph(oneatkhyar_title, comp_title_style))
-    story.append(Paragraph("• Built the flagship lifestyle/e-commerce app 'Shi Del' from scratch, scaling client adoption to over 100k active users.", bullet_style))
-    story.append(Paragraph("• Designed highly responsive UI flows using Flutter and Dart, incorporating state management (Bloc) and clean architecture.", bullet_style))
-    story.append(Paragraph("• Configured Algolia search nodes and real-time Firestore database triggers to manage heavy product catalog indices.", bullet_style))
-    story.append(Paragraph("• Programmed backend microservice layers using Node.js, TypeScript, and Firebase Cloud Functions.", bullet_style))
-    story.append(Paragraph("<b>Technologies:</b> Flutter, Dart, Firebase, Firestore, Algolia, TypeScript, NodeJS, Clean Architecture, Confluence", tag_style))
-    story.append(Spacer(1, 8))
-    
-    # Force Page Break to prevent overflow and keep layout clean
-    story.append(PageBreak())
-    
-    # 4. CLOUDSOURCE MYANMAR
-    cloudsource_title = (
-        "<font color='#f8fafc'><b>Cloudsource Myanmar</b></font> &nbsp;|&nbsp; "
-        "<font color='#14b8a6'><b>Full Stack Developer</b></font> &nbsp;|&nbsp; "
-        "<font color='#64748b'>Yangon, Myanmar (Jul 2018 - Sep 2019)</font>"
-    )
-    story.append(Paragraph(cloudsource_title, comp_title_style))
-    story.append(Paragraph("• Programmed responsive client web portals and administrative dashboards using Laravel and Ruby on Rails.", bullet_style))
-    story.append(Paragraph("• Configured complex SQL schemas, transactional index optimizations, and API integrations in PostgreSQL databases.", bullet_style))
-    story.append(Paragraph("• Maintained server hosting deployments, integrating secure SSL handshakes and cron monitoring automation.", bullet_style))
-    story.append(Paragraph("<b>Technologies:</b> Ruby on Rails, Laravel, PostgreSQL, PHP, Ruby, SQL, Apache", tag_style))
-    story.append(Spacer(1, 6))
-    
-    # 5. ACROQUEST MYANMAR
-    acroquest_title = (
-        "<font color='#f8fafc'><b>Acroquest Myanmar Technology</b></font> &nbsp;|&nbsp; "
-        "<font color='#14b8a6'><b>Software Engineer Intern</b></font> &nbsp;|&nbsp; "
-        "<font color='#64748b'>Yangon, Myanmar (May 2017 - Aug 2017)</font>"
-    )
-    story.append(Paragraph(acroquest_title, comp_title_style))
-    story.append(Paragraph("• Implemented proof-of-concept decentralized utility billing applications detailing smart contract automations.", bullet_style))
-    story.append(Paragraph("• Programmed Solidity smart contract validation scripts on private Ethereum testnet networks.", bullet_style))
-    story.append(Paragraph("<b>Technologies:</b> Solidity, Smart Contracts, Ethereum, JavaScript, HTML/CSS", tag_style))
-    story.append(Spacer(1, 10))
+    # 2. OPN THAILAND (SR)
+    exp2_data = [[
+        Paragraph("<b>Jul 2024 -<br/>Jul 2025</b><br/><font color='#64748b'>Bangkok, Thailand</font>", date_style),
+        TimelineLine(width=20),
+        Paragraph(
+            "<b><font size='11.5' color='#f8fafc'>Opn Thailand</font></b> &nbsp;<font color='#94a3b8' size='9'>(formerly Omise)</font> &nbsp;|&nbsp; <font color='#14b8a6'><b>Senior Mobile Engineer</b></font><br/>"
+            "• Architected payment SDK systems handling multi-million dollar transactions for enterprise clients in Southeast Asia.<br/>"
+            "• Led migrations of legacy UI platforms to SwiftUI, resolving core layout threads and reducing render times by 20%.<br/>"
+            "• Configured DevOps pipelines via Fastlane and GitHub Actions, cutting delivery cycles to TestFlight and Play Store by 40%.<br/>"
+            "• Supervised mobile engineering standards, conducting reviews, writing modular frameworks, and onboarding new staff.",
+            exp_detail_style
+        )
+    ]]
+    exp2_table = Table(exp2_data, colWidths=[90, 20, 422])
+    exp2_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
+    story.append(exp2_table)
+
+    # 3. OPN THAILAND (SE)
+    exp3_data = [[
+        Paragraph("<b>Jul 2022 -<br/>Jun 2024</b><br/><font color='#64748b'>Bangkok, Thailand</font>", date_style),
+        TimelineLine(width=20),
+        Paragraph(
+            "<font color='#14b8a6'><b>Software Engineer</b></font><br/>"
+            "• Integrated secure card tokenization modules matching PCI-DSS compliance specifications across regional APIs.<br/>"
+            "• Programmed core components for native iOS payment SDKs, maintaining robust offline safety nets.<br/>"
+            "• Deployed and maintained Firebase push notification suites and Firestore real-time client databases.<br/>"
+            "<b>Technologies:</b> SwiftUI, Swift, Firebase, Firestore, REST APIs, Fastlane, CI/CD, Git",
+            exp_detail_style
+        )
+    ]]
+    exp3_table = Table(exp3_data, colWidths=[90, 20, 422])
+    exp3_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
+    story.append(exp3_table)
+
+    # 4. ONE ATKHYAR
+    exp4_data = [[
+        Paragraph("<b>Mar 2019 -<br/>Jun 2022</b><br/><font color='#64748b'>Yangon, Myanmar</font>", date_style),
+        TimelineLine(width=20),
+        Paragraph(
+            "<b><font size='11.5' color='#f8fafc'>One Atkhyar</font></b> &nbsp;|&nbsp; <font color='#14b8a6'><b>Mobile Engineer</b></font><br/>"
+            "• Built the flagship lifestyle/e-commerce app 'Shi Del' from scratch, scaling client adoption to over 100k active users.<br/>"
+            "• Designed highly responsive UI flows using Flutter and Dart, incorporating state management (Bloc) and clean architecture.<br/>"
+            "• Configured Algolia search nodes and real-time Firestore database triggers to manage heavy product catalog indices.<br/>"
+            "• Programmed backend microservice layers using Node.js, TypeScript, and Firebase Cloud Functions.<br/>"
+            "<b>Technologies:</b> Flutter, Dart, Firebase, Firestore, Algolia, TypeScript, NodeJS, Clean Architecture, Confluence",
+            exp_detail_style
+        )
+    ]]
+    exp4_table = Table(exp4_data, colWidths=[90, 20, 422])
+    exp4_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
+    story.append(exp4_table)
+
+    # 5. CLOUDSOURCE MYANMAR
+    exp5_data = [[
+        Paragraph("<b>Jul 2018 -<br/>Sep 2019</b><br/><font color='#64748b'>Yangon, Myanmar</font>", date_style),
+        TimelineLine(width=20),
+        Paragraph(
+            "<b><font size='11.5' color='#f8fafc'>Cloudsource Myanmar</font></b> &nbsp;|&nbsp; <font color='#14b8a6'><b>Full Stack Developer</b></font><br/>"
+            "• Programmed responsive client web portals and administrative dashboards using Laravel and Ruby on Rails.<br/>"
+            "• Configured complex SQL schemas, transactional index optimizations, and API integrations in PostgreSQL databases.<br/>"
+            "• Maintained server hosting deployments, integrating secure SSL handshakes and cron monitoring automation.<br/>"
+            "<b>Technologies:</b> Ruby on Rails, Laravel, PostgreSQL, PHP, Ruby, SQL, Apache",
+            exp_detail_style
+        )
+    ]]
+    exp5_table = Table(exp5_data, colWidths=[90, 20, 422])
+    exp5_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
+    story.append(exp5_table)
+
+    # 6. ACROQUEST MYANMAR
+    exp6_data = [[
+        Paragraph("<b>May 2017 -<br/>Aug 2017</b><br/><font color='#64748b'>Yangon, Myanmar</font>", date_style),
+        TimelineLine(width=20, is_end=True),
+        Paragraph(
+            "<b><font size='11.5' color='#f8fafc'>Acroquest Myanmar Technology</font></b> &nbsp;|&nbsp; <font color='#14b8a6'><b>Software Engineer Intern</b></font><br/>"
+            "• Implemented proof-of-concept decentralized utility billing applications detailing smart contract automations.<br/>"
+            "• Programmed Solidity smart contract validation scripts on private Ethereum testnet networks.<br/>"
+            "<b>Technologies:</b> Solidity, Smart Contracts, Ethereum, JavaScript, HTML/CSS",
+            exp_detail_style
+        )
+    ]]
+    exp6_table = Table(exp6_data, colWidths=[90, 20, 422])
+    exp6_table.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+    ]))
+    story.append(exp6_table)
     
     # ------------------ TECHNICAL SKILLS ------------------
     story.append(Paragraph("TECHNICAL SKILLS", section_title_style))
     
     skills_data = [
-        [Paragraph("<b>Mobile & Core:</b>", comp_title_style), 
+        [Paragraph("<b>Mobile & Core:</b>", skills_label_style), 
          Paragraph("SwiftUI, Flutter, Swift, Dart, Ionic, Android SDK", norm_text_style)],
-        [Paragraph("<b>Backend & Web:</b>", comp_title_style), 
+        [Paragraph("<b>Backend & Web:</b>", skills_label_style), 
          Paragraph("Node.js, TypeScript, Ruby on Rails, Laravel, PHP, REST APIs, PostgreSQL, SQL", norm_text_style)],
-        [Paragraph("<b>Cloud & Infra:</b>", comp_title_style), 
+        [Paragraph("<b>Cloud & Infra:</b>", skills_label_style), 
          Paragraph("AWS (S3, EC2, Lambda), Firebase, Cloud Firestore, Firebase Cloud Functions", norm_text_style)],
-        [Paragraph("<b>DevOps & Tools:</b>", comp_title_style), 
+        [Paragraph("<b>DevOps & Tools:</b>", skills_label_style), 
          Paragraph("Fastlane, CI/CD pipelines, Docker, Git, GitHub Actions, Linear, Notion, Confluence", norm_text_style)]
     ]
     
-    skills_table = Table(skills_data, colWidths=[120, 410])
+    skills_table = Table(skills_data, colWidths=[120, 412])
     skills_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
-        ('TOPPADDING', (0,0), (-1,-1), 3),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
     story.append(skills_table)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 4))
     
     # ------------------ CERTIFICATIONS ------------------
     story.append(Paragraph("CREDENTIALS & CERTIFICATIONS", section_title_style))
     
     certs_data = [
-        [Paragraph("<b>2026:</b>", comp_title_style), Paragraph("AWS Certified Solutions Architect – Associate (Credly: 314a6a4e-8b66-437a-9f7d-d75a9f38d05f)", norm_text_style)],
-        [Paragraph("<b>2025:</b>", comp_title_style), Paragraph("AWS Certified Cloud Practitioner", norm_text_style)]
+        [Paragraph("<b>2026:</b>", skills_label_style), Paragraph("AWS Certified Solutions Architect – Associate (Credly ID: 314a6a4e-8b66-437a-9f7d-d75a9f38d05f)", norm_text_style)],
+        [Paragraph("<b>2025:</b>", skills_label_style), Paragraph("AWS Certified Cloud Practitioner", norm_text_style)]
     ]
-    certs_table = Table(certs_data, colWidths=[60, 470])
+    certs_table = Table(certs_data, colWidths=[60, 472])
     certs_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('BOTTOMPADDING', (0,0), (-1,-1), 2),
@@ -311,7 +452,7 @@ def build_pdf(filename):
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
     story.append(certs_table)
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 4))
     
     # ------------------ PUBLICATIONS ------------------
     story.append(Paragraph("PUBLICATIONS & RESEARCH", section_title_style))
@@ -321,7 +462,7 @@ def build_pdf(filename):
         "via Ethereum smart contracts and cloud integrations. Indexed in IEEE Xplore: <i>https://ieeexplore.ieee.org/document/8920931</i>"
     )
     story.append(Paragraph(pub_text, norm_text_style))
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 4))
     
     # ------------------ EDUCATION ------------------
     story.append(Paragraph("EDUCATION", section_title_style))
@@ -330,7 +471,7 @@ def build_pdf(filename):
         "University of Computer Studies, Yangon, Myanmar (2013 - 2018)"
     )
     story.append(Paragraph(edu_text, norm_text_style))
-    story.append(Spacer(1, 10))
+    story.append(Spacer(1, 4))
     
     # ------------------ LANGUAGES ------------------
     story.append(Paragraph("LANGUAGE PROFICIENCIES", section_title_style))
@@ -342,13 +483,14 @@ def build_pdf(filename):
     ]
     story.append(Paragraph(" &nbsp;•&nbsp; ".join(langs), norm_text_style))
     
+    # Build the background rendering callback
     def draw_background(canvas, doc):
         canvas.saveState()
         canvas.setFillColor(HexColor('#05050b'))
         canvas.rect(0, 0, doc.pagesize[0], doc.pagesize[1], fill=True, stroke=False)
         canvas.restoreState()
 
-    # Build the document
+    # Build the document with two-pass canvasmaker to compute total pages dynamically
     doc.build(story, onFirstPage=draw_background, onLaterPages=draw_background, canvasmaker=NumberedCanvas)
 
 if __name__ == "__main__":
