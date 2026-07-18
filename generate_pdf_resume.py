@@ -209,7 +209,7 @@ def build_pdf(filename):
         fontSize=9.2,
         leading=14.5,
         textColor=slate_grey,
-        spaceAfter=6
+        spaceAfter=12  # Handles spacing between consecutive tables when cell padding is 0
     )
     
     norm_text_style = ParagraphStyle(
@@ -237,16 +237,21 @@ def build_pdf(filename):
     story.append(Paragraph("KYAWT MAY HLAING", title_style))
     story.append(Paragraph("SENIOR MOBILE ENGINEER", subtitle_style))
     
-    # Contact Information Grid
+    # Contact Information Grid (featuring Clickable Links styled in Teal)
+    email_html = '<a href="mailto:pinky.hlaing173@gmail.com"><font color="#14b8a6"><u>pinky.hlaing173@gmail.com</u></font></a>'
+    linkedin_html = '<a href="https://linkedin.com/in/kyawt-may-hlaing-4623aaab"><font color="#14b8a6"><u>linkedin.com/in/kyawt-may-hlaing-4623aaab</u></font></a>'
+    github_html = '<a href="https://github.com/kyawtmayhlaing173"><font color="#14b8a6"><u>github.com/kyawtmayhlaing173</u></font></a>'
+    portfolio_html = '<a href="https://kyawtmayhlaing173.github.io"><font color="#14b8a6"><u>kyawtmayhlaing173.github.io</u></font></a>'
+    
     contacts_table_data = [
         [
-            make_contact_item(create_email_icon, "pinky.hlaing173@gmail.com", contact_style),
-            make_contact_item(create_linkedin_icon, "linkedin.com/in/kyawt-may-hlaing-4623aaab", contact_style),
-            make_contact_item(create_github_icon, "github.com/kyawtmayhlaing173", contact_style)
+            make_contact_item(create_email_icon, email_html, contact_style),
+            make_contact_item(create_linkedin_icon, linkedin_html, contact_style),
+            make_contact_item(create_github_icon, github_html, contact_style)
         ],
         [
             make_contact_item(create_location_icon, "Tokyo, Japan", contact_style),
-            make_contact_item(create_website_icon, "kyawtmayhlaing173.github.io", contact_style),
+            make_contact_item(create_website_icon, portfolio_html, contact_style),
             Paragraph("", contact_style)  # Empty cell for layout balance
         ]
     ]
@@ -273,7 +278,10 @@ def build_pdf(filename):
     story.append(Paragraph(summary_text, norm_text_style))
     story.append(Spacer(1, 4))
     
-    # 1. AMPTALK
+    # ------------------ WORK EXPERIENCE (TIMELINE TABLES) ------------------
+    story.append(Paragraph("PROFESSIONAL EXPERIENCE", section_title_style))
+    
+    # 1. AMPTALK (is_start=True to begin the vertical line connector)
     exp1_data = [[
         Paragraph("<b>Aug 2025 -<br/>Present</b><br/><font color='#64748b'>Tokyo, Japan</font>", date_style),
         TimelineLine(width=20, is_start=True),
@@ -289,11 +297,13 @@ def build_pdf(filename):
     exp1_table = Table(exp1_data, colWidths=[90, 20, 422])
     exp1_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
+    exp1_table.spaceBefore = 0
+    exp1_table.spaceAfter = 0
     story.append(exp1_table)
     
     # 2. OPN THAILAND (SR)
@@ -312,11 +322,13 @@ def build_pdf(filename):
     exp2_table = Table(exp2_data, colWidths=[90, 20, 422])
     exp2_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
+    exp2_table.spaceBefore = 0
+    exp2_table.spaceAfter = 0
     story.append(exp2_table)
 
     # 3. OPN THAILAND (SE)
@@ -324,7 +336,7 @@ def build_pdf(filename):
         Paragraph("<b>Jul 2022 -<br/>Jun 2024</b><br/><font color='#64748b'>Bangkok, Thailand</font>", date_style),
         TimelineLine(width=20),
         Paragraph(
-            "<font color='#14b8a6'><b>Software Engineer</b></font><br/>"
+            "<b><font size='11.5' color='#f8fafc'>Opn Thailand</font></b> &nbsp;|&nbsp; <font color='#14b8a6'><b>Software Engineer</b></font><br/>"
             "• Integrated secure card tokenization modules matching PCI-DSS compliance specifications across regional APIs.<br/>"
             "• Programmed core components for native iOS payment SDKs, maintaining robust offline safety nets.<br/>"
             "• Deployed and maintained Firebase push notification suites and Firestore real-time client databases.<br/>"
@@ -335,11 +347,13 @@ def build_pdf(filename):
     exp3_table = Table(exp3_data, colWidths=[90, 20, 422])
     exp3_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
+    exp3_table.spaceBefore = 0
+    exp3_table.spaceAfter = 0
     story.append(exp3_table)
 
     # 4. ONE ATKHYAR
@@ -359,11 +373,13 @@ def build_pdf(filename):
     exp4_table = Table(exp4_data, colWidths=[90, 20, 422])
     exp4_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
+    exp4_table.spaceBefore = 0
+    exp4_table.spaceAfter = 0
     story.append(exp4_table)
 
     # 5. CLOUDSOURCE MYANMAR
@@ -382,14 +398,16 @@ def build_pdf(filename):
     exp5_table = Table(exp5_data, colWidths=[90, 20, 422])
     exp5_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
+    exp5_table.spaceBefore = 0
+    exp5_table.spaceAfter = 0
     story.append(exp5_table)
 
-    # 6. ACROQUEST MYANMAR
+    # 6. ACROQUEST MYANMAR (is_end=True to terminate the vertical line connector)
     exp6_data = [[
         Paragraph("<b>May 2017 -<br/>Aug 2017</b><br/><font color='#64748b'>Yangon, Myanmar</font>", date_style),
         TimelineLine(width=20, is_end=True),
@@ -404,12 +422,15 @@ def build_pdf(filename):
     exp6_table = Table(exp6_data, colWidths=[90, 20, 422])
     exp6_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
         ('LEFTPADDING', (0,0), (-1,-1), 0),
         ('RIGHTPADDING', (0,0), (-1,-1), 0),
     ]))
+    exp6_table.spaceBefore = 0
+    exp6_table.spaceAfter = 0
     story.append(exp6_table)
+    story.append(Spacer(1, 4))
     
     # ------------------ TECHNICAL SKILLS ------------------
     story.append(Paragraph("TECHNICAL SKILLS", section_title_style))
@@ -439,8 +460,10 @@ def build_pdf(filename):
     # ------------------ CERTIFICATIONS ------------------
     story.append(Paragraph("CREDENTIALS & CERTIFICATIONS", section_title_style))
     
+    credly_html = '<a href="https://www.credly.com/badges/314a6a4e-8b66-437a-9f7d-d75a9f38d05f"><font color="#14b8a6"><u>314a6a4e-8b66-437a-9f7d-d75a9f38d05f</u></font></a>'
+    
     certs_data = [
-        [Paragraph("<b>2026:</b>", skills_label_style), Paragraph("AWS Certified Solutions Architect – Associate (Credly ID: 314a6a4e-8b66-437a-9f7d-d75a9f38d05f)", norm_text_style)],
+        [Paragraph("<b>2026:</b>", skills_label_style), Paragraph(f"AWS Certified Solutions Architect – Associate (Credly ID: {credly_html})", norm_text_style)],
         [Paragraph("<b>2025:</b>", skills_label_style), Paragraph("AWS Certified Cloud Practitioner", norm_text_style)]
     ]
     certs_table = Table(certs_data, colWidths=[60, 472])
@@ -456,10 +479,13 @@ def build_pdf(filename):
     
     # ------------------ PUBLICATIONS ------------------
     story.append(Paragraph("PUBLICATIONS & RESEARCH", section_title_style))
+    
+    ieee_html = '<a href="https://ieeexplore.ieee.org/document/8920931"><font color="#14b8a6"><u>https://ieeexplore.ieee.org/document/8920931</u></font></a>'
+    
     pub_text = (
         "<b>IEEE Xplore Publication: Blockchain Utility Billing (2019)</b><br/>"
         "Co-authored decentralized utilities systems research detailing automated consumer settlement triggers "
-        "via Ethereum smart contracts and cloud integrations. Indexed in IEEE Xplore: <i>https://ieeexplore.ieee.org/document/8920931</i>"
+        f"via Ethereum smart contracts and cloud integrations. Indexed in IEEE Xplore: {ieee_html}"
     )
     story.append(Paragraph(pub_text, norm_text_style))
     story.append(Spacer(1, 4))
