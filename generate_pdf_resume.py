@@ -25,11 +25,7 @@ class NumberedCanvas(canvas.Canvas):
     def draw_page_decorations(self, page_count):
         self.saveState()
         
-        # 1. Fill background with HexColor('#05050b')
-        self.setFillColor(HexColor('#05050b'))
-        self.rect(0, 0, self._pagesize[0], self._pagesize[1], fill=True, stroke=False)
-        
-        # 2. Draw subtle border highlight glow
+        # 1. Draw subtle border highlight glow
         self.setStrokeColor(HexColor('#14b8a6'))
         self.setLineWidth(1)
         # Left accent border glow
@@ -346,8 +342,14 @@ def build_pdf(filename):
     ]
     story.append(Paragraph(" &nbsp;•&nbsp; ".join(langs), norm_text_style))
     
+    def draw_background(canvas, doc):
+        canvas.saveState()
+        canvas.setFillColor(HexColor('#05050b'))
+        canvas.rect(0, 0, doc.pagesize[0], doc.pagesize[1], fill=True, stroke=False)
+        canvas.restoreState()
+
     # Build the document
-    doc.build(story, canvasmaker=NumberedCanvas)
+    doc.build(story, onFirstPage=draw_background, onLaterPages=draw_background, canvasmaker=NumberedCanvas)
 
 if __name__ == "__main__":
     output_path = "/Users/kyawtmayhlaing/Desktop/development/ai/interactive-portfolio/Kyawt_May_Hlaing_Resume.pdf"
