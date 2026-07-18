@@ -150,8 +150,8 @@ body {
 
 /* --- PHYSICAL PHONE CASE SHELL --- */
 .phone-frame {
-  width: 345px;
-  height: 700px;
+  width: 385px;
+  height: 780px;
   background: #111116;
   border: 10px solid #2e2e38;
   border-radius: 52px;
@@ -265,7 +265,7 @@ body {
   flex-grow: 1;
   position: relative;
   overflow: hidden;
-  background: #090912;
+  background: var(--color-bg);
 }
 
 .app-screen {
@@ -293,14 +293,18 @@ body {
 /* App Header Nav bar */
 .app-header {
   padding: 1.25rem;
-  background: linear-gradient(180deg, #111124 0%, #090912 100%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(12, 12, 26, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .app-header-nav {
   padding: 1.25rem 1rem 0.75rem;
-  background: #111124;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(12, 12, 26, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
   text-align: center;
 }
 
@@ -373,10 +377,11 @@ body {
 }
 
 .sim-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
   border-radius: 14px;
   padding: 1rem;
+  transition: var(--transition-fast);
 }
 
 .sim-intro {
@@ -492,8 +497,8 @@ body {
 }
 
 .sim-list-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 0.85rem;
   transition: var(--transition-fast);
@@ -501,8 +506,9 @@ body {
 }
 
 .sim-list-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--color-border);
+  background: var(--color-bg-card-hover);
+  border-color: rgba(20, 184, 166, 0.3);
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.1);
 }
 
 .card-date {
@@ -554,13 +560,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 12px;
   padding: 0.85rem;
-  cursor: pointer;
   transition: var(--transition-smooth);
-}
-
-.sim-skill-card.active {
-  background: rgba(20, 184, 166, 0.04);
-  border-color: rgba(20, 184, 166, 0.25);
 }
 
 .skill-row {
@@ -576,35 +576,10 @@ body {
   color: white;
 }
 
-.skill-val {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--color-accent);
-}
-
-.skill-bar {
-  height: 4px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.skill-fill {
-  height: 100%;
-  background: var(--grad-teal);
-}
-
 .sim-card-badges {
-  max-height: 0;
-  overflow: hidden;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  transition: max-height 0.4s ease, margin-top 0.4s ease;
-}
-
-.sim-skill-card.active .sim-card-badges {
-  max-height: 100px;
   margin-top: 0.75rem;
 }
 
@@ -624,8 +599,8 @@ body {
 }
 
 .sim-project-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
@@ -635,7 +610,9 @@ body {
 }
 
 .sim-project-card:hover {
-  border-color: var(--color-border);
+  background: var(--color-bg-card-hover);
+  border-color: rgba(20, 184, 166, 0.3);
+  box-shadow: 0 4px 12px rgba(20, 184, 166, 0.1);
   transform: translateY(-2px);
 }
 
@@ -771,8 +748,10 @@ body {
 /* iOS Bottom Tab Bar */
 .phone-tab-bar {
   height: 52px;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  background: #111124;
+  border-top: 1px solid var(--color-border);
+  background: rgba(12, 12, 26, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -1289,11 +1268,135 @@ body {
   }
 }
 
-/* --- PROFESSIONAL PRINT TO PDF STYLING --- */
+/* --- COUNTRY BADGE --- */
+.country-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: var(--transition-fast);
+}
+
+.country-badge:hover {
+  background: rgba(20, 184, 166, 0.08);
+  border-color: var(--color-border-hover);
+  color: var(--color-accent);
+}
+
+/* --- VERTICAL PROMOTION TIMELINE --- */
+.promo-timeline {
+  position: relative;
+  padding-left: 2.2rem;
+  margin: 1.5rem 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.promo-timeline::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 15px;
+  bottom: 15px;
+  width: 2px;
+  background: repeating-linear-gradient(to bottom, var(--color-accent) 0, var(--color-accent) 6px, transparent 6px, transparent 12px);
+  opacity: 0.45;
+}
+
+.promo-item {
+  position: relative;
+  transition: var(--transition-smooth);
+}
+
+.promo-marker {
+  position: absolute;
+  left: -1.75rem;
+  top: 1.45rem;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  border: 2px solid #0f0f1b;
+  z-index: 2;
+  box-shadow: 0 0 8px rgba(20, 184, 166, 0.4);
+  transition: var(--transition-smooth);
+}
+
+.promo-item:hover .promo-marker {
+  background: var(--color-primary);
+  border-color: #0f0f1b;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.6);
+  transform: scale(1.2);
+}
+
+/* --- COMPANY LINK AND DECORATIVE HOVERS --- */
+.company-link {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transition-fast);
+  border-bottom: 1px dotted rgba(20, 184, 166, 0.3);
+}
+
+.company-link:hover {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  text-shadow: 0 0 8px rgba(99, 102, 241, 0.3);
+}
+
+.promo-content {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: var(--transition-smooth);
+}
+
+.promo-item:hover .promo-content {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(20, 184, 166, 0.25);
+  transform: translateY(-2px);
+}
+
+.promo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.promo-role {
+  margin: 0;
+  font-size: 1.1rem;
+  color: white;
+  font-weight: 600;
+}
+
+.promo-date {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+/* --- PROFESSIONAL PRINT TO PDF STYLING (DARK THEME PRESERVED) --- */
 @media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   body {
-    background: #ffffff !important;
-    color: #1e293b !important;
+    background: #05050b !important;
+    color: #f8fafc !important;
     font-size: 10pt !important;
   }
   
@@ -1323,44 +1426,36 @@ body {
     display: none !important;
   }
   
-  /* Reset typography colors */
-  h1, h2, h3, h4, .card-detail-title, .card-detail-company, .cert-title-text, .lang-title-name {
-    color: #0f172a !important;
-    background: none !important;
-    -webkit-text-fill-color: initial !important;
-    -webkit-background-clip: initial !important;
-  }
-  
-  .details-subtitle {
-    color: #475569 !important;
-    border-left-color: #6366f1 !important;
-  }
-  
-  /* Clean boxes for print cards */
-  .glass-card {
-    background: none !important;
-    border: 1px solid #cbd5e1 !important;
+  /* Retain dark visual hierarchy for printed cards */
+  .glass-card, .detail-card, .edu-card, .cert-detail-card, .promo-content {
+    background: rgba(12, 12, 26, 0.75) !important;
+    border: 1px solid rgba(99, 102, 241, 0.2) !important;
+    color: #f8fafc !important;
     box-shadow: none !important;
-    padding: 1.5rem !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
   
-  .bullet-list li, .section-lead-text, .edu-school, .cert-issuer-text, .lang-level-desc {
-    color: #334155 !important;
-  }
-  
   .tag {
-    background: #f1f5f9 !important;
-    border: 1px solid #cbd5e1 !important;
-    color: #475569 !important;
+    background: rgba(99, 102, 241, 0.1) !important;
+    color: #14b8a6 !important;
+    border: 1px solid rgba(20, 184, 166, 0.2) !important;
   }
   
-  .card-detail-date, .edu-date, .cert-year {
-    color: #4f46e5 !important;
+  .bullet-list li, .section-lead-text, .edu-school, .cert-issuer-text, .lang-level-desc {
+    color: #94a3b8 !important;
+  }
+
+  .card-detail-date, .edu-date, .cert-year, .promo-date {
+    color: #14b8a6 !important;
+  }
+
+  .promo-marker {
+    background: #14b8a6 !important;
+    border-color: #0f0f1b !important;
   }
   
-  /* Grid conversions */
+  /* Grid layouts print adjustments */
   .edu-grid, .certs-grid-details, .langs-list-details {
     grid-template-columns: 1fr 1fr !important;
     gap: 1.25rem !important;
@@ -1374,15 +1469,10 @@ body {
     display: none !important; /* Hide contact forms in print */
   }
   
-  .lang-title-name::after {
-    content: " (" attr(data-percentage) "% proficiency)";
-    font-size: 0.8rem;
-    font-weight: normal;
-    color: #475569;
-  }
+
   
   .details-footer {
-    border-top-color: #cbd5e1 !important;
-    color: #94a3b8 !important;
+    border-top-color: rgba(99, 102, 241, 0.2) !important;
+    color: #64748b !important;
   }
 }

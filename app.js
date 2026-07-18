@@ -1,16 +1,13 @@
-
-
 // --- PHONE SCREEN TAB NAVIGATION ---
 const tabButtons = document.querySelectorAll('.tab-item');
 const appScreens = document.querySelectorAll('.app-screen');
+const detailsPane = document.querySelector('.details-pane');
 
 // Map phone tabs to desktop sections for scrolling
 const sectionMapping = {
   home: 'body',
   work: 'work-details',
-  skills: 'credentials-details',
-  projects: 'project-details',
-  contact: 'contact-details'
+  portfolio: 'credentials-details'
 };
 
 tabButtons.forEach(btn => {
@@ -32,11 +29,22 @@ tabButtons.forEach(btn => {
     // 3. Smooth-scroll desktop details pane to the mapped section
     const targetSectionId = sectionMapping[targetScreen];
     if (targetSectionId === 'body') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (window.innerWidth > 992 && detailsPane) {
+        detailsPane.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } else {
       const element = document.getElementById(targetSectionId);
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (window.innerWidth > 992 && detailsPane) {
+          // Desktop split view: scroll the details pane container
+          const topOffset = element.offsetTop - 30; // slight offset for breathing room
+          detailsPane.scrollTo({ top: topOffset, behavior: 'smooth' });
+        } else {
+          // Mobile view: scroll the window
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
     }
   });
@@ -45,6 +53,8 @@ tabButtons.forEach(btn => {
 
 // --- PHONE ITEM TAP TO SCROLL & HIGHLIGHT ---
 const clickableCards = document.querySelectorAll('.clickable-card');
+let isSyncing = false; // Flag to prevent scroll event loop feedback
+let syncTimeout;
 
 clickableCards.forEach(card => {
   card.addEventListener('click', () => {
@@ -52,8 +62,23 @@ clickableCards.forEach(card => {
     const targetElement = document.getElementById(scrollToId);
     
     if (targetElement) {
-      // Scroll target element to center of screen
-      targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Scroll target element to center of desktop pane (or viewport on mobile)
+      if (window.innerWidth > 992 && detailsPane) {
+        const parentRect = detailsPane.getBoundingClientRect();
+        const elementRect = targetElement.getBoundingClientRect();
+        const relativeTop = elementRect.top - parentRect.top + detailsPane.scrollTop;
+        const targetScroll = relativeTop - parentRect.height / 2 + elementRect.height / 2;
+        
+        isSyncing = true;
+        detailsPane.scrollTo({ top: targetScroll, behavior: 'smooth' });
+        
+        clearTimeout(syncTimeout);
+        syncTimeout = setTimeout(() => {
+          isSyncing = false;
+        }, 800);
+      } else {
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       
       // Add glowing highlight effect
       targetElement.classList.add('glow-highlight');
@@ -65,26 +90,13 @@ clickableCards.forEach(card => {
 });
 
 
-// --- SIMULATOR SKILLS ACCORDION ---
-const simSkillCards = document.querySelectorAll('.sim-skill-card');
 
-simSkillCards.forEach(card => {
-  card.addEventListener('click', () => {
-    // Toggle active category
-    simSkillCards.forEach(c => c.classList.remove('active'));
-    card.classList.add('active');
-  });
-});
 
 
 // --- BIDIRECTIONAL SCROLL SYNCHRONIZATION ---
 
-const detailsPane = document.querySelector('.details-pane');
 const workAppContent = document.querySelector('#screen-work .app-content');
-const projectsAppContent = document.querySelector('#screen-projects .app-content');
-
-let isSyncing = false; // Flag to prevent scroll event loop feedback
-let syncTimeout;
+const portfolioAppContent = document.querySelector('#screen-portfolio .app-content');
 
 // 1. Sync: Scrolling details pane updates phone simulator tabs/screens
 const syncTabsOnDetailsScroll = () => {
@@ -95,9 +107,8 @@ const syncTabsOnDetailsScroll = () => {
   
   const sections = [
     { id: 'work-details', key: 'work' },
-    { id: 'project-details', key: 'projects' },
-    { id: 'credentials-details', key: 'skills' },
-    { id: 'contact-details', key: 'contact' }
+    { id: 'credentials-details', key: 'portfolio' }, // Skills section maps to portfolio
+    { id: 'project-details', key: 'portfolio' }      // Projects section also maps to portfolio
   ];
   
   sections.forEach(sec => {
@@ -157,13 +168,20 @@ const syncDetailsOnSimScroll = (simViewport) => {
     const targetElement = document.getElementById(scrollToId);
     if (targetElement) {
       isSyncing = true;
-      targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Scroll to center of details pane
+      const parentRect = detailsPane.getBoundingClientRect();
+      const elementRect = targetElement.getBoundingClientRect();
+      const relativeTop = elementRect.top - parentRect.top + detailsPane.scrollTop;
+      const targetScroll = relativeTop - parentRect.height / 2 + elementRect.height / 2;
+      
+      detailsPane.scrollTo({ top: targetScroll, behavior: 'smooth' });
       
       // Release lock after smooth scroll completes
       clearTimeout(syncTimeout);
       syncTimeout = setTimeout(() => {
         isSyncing = false;
-      }, 700);
+      }, 800);
     }
   }
 };
@@ -179,9 +197,9 @@ if (workAppContent) {
   });
 }
 
-if (projectsAppContent) {
-  projectsAppContent.addEventListener('scroll', () => {
-    syncDetailsOnSimScroll(projectsAppContent);
+if (portfolioAppContent) {
+  portfolioAppContent.addEventListener('scroll', () => {
+    syncDetailsOnSimScroll(portfolioAppContent);
   });
 }
 
