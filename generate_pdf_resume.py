@@ -1,4 +1,5 @@
 import os
+from reportlab.graphics.shapes import Drawing, Rect, Circle, Line, Polygon, String
 import random
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.colors import HexColor
@@ -82,28 +83,62 @@ def create_medium_icon():
     d.add(Circle(10.5, 6, 1.5, fillColor=HexColor('#14b8a6'), strokeColor=None))
     return d
 
-def create_avatar_placeholder():
-    d = Drawing(60, 60)
-    d.add(Rect(2, 2, 56, 56, fillColor=HexColor('#0c0c1a'), strokeColor=HexColor('#14b8a6'), strokeWidth=1, rx=4, ry=4))
-    d.add(Circle(30, 34, 11, fillColor=None, strokeColor=HexColor('#6366f1'), strokeWidth=1))
-    d.add(Line(14, 10, 20, 18, strokeColor=HexColor('#6366f1'), strokeWidth=1))
-    d.add(Line(46, 10, 40, 18, strokeColor=HexColor('#6366f1'), strokeWidth=1))
-    d.add(Line(20, 18, 40, 18, strokeColor=HexColor('#6366f1'), strokeWidth=1))
+# --- VECTOR FLAG ICONS ---
+def create_myanmar_flag():
+    d = Drawing(16, 11)
+    d.add(Rect(0, 7.3, 16, 3.7, fillColor=HexColor('#fecb00'), strokeColor=None))
+    d.add(Rect(0, 3.7, 16, 3.7, fillColor=HexColor('#109856'), strokeColor=None))
+    d.add(Rect(0, 0, 16, 3.7, fillColor=HexColor('#ea2839'), strokeColor=None))
+    d.add(Rect(0, 0, 16, 11, fillColor=None, strokeColor=HexColor('#64748b'), strokeWidth=0.4))
+    # white star
+    d.add(Polygon([6,6.5, 7.5,6.5, 8,8.5, 8.5,6.5, 10,6.5, 8.8,5.5, 9.3,3.5, 8,4.5, 6.7,3.5, 7.2,5.5], fillColor=HexColor('#ffffff'), strokeColor=None))
     return d
 
+def create_china_flag():
+    d = Drawing(16, 11)
+    d.add(Rect(0, 0, 16, 11, fillColor=HexColor('#de2910'), strokeColor=HexColor('#64748b'), strokeWidth=0.4))
+    d.add(Polygon([3,8, 4,8, 4.5,9.5, 5,8, 6,8, 5.1,7, 5.5,5.5, 4.5,6.5, 3.5,5.5, 3.9,7], fillColor=HexColor('#ffde00'), strokeColor=None))
+    return d
+
+def create_uk_flag():
+    d = Drawing(16, 11)
+    d.add(Rect(0, 0, 16, 11, fillColor=HexColor('#00247d'), strokeColor=HexColor('#64748b'), strokeWidth=0.4))
+    d.add(Line(0, 0, 16, 11, strokeColor=HexColor('#ffffff'), strokeWidth=2))
+    d.add(Line(0, 11, 16, 0, strokeColor=HexColor('#ffffff'), strokeWidth=2))
+    d.add(Line(0, 0, 16, 11, strokeColor=HexColor('#cf142b'), strokeWidth=0.9))
+    d.add(Line(0, 11, 16, 0, strokeColor=HexColor('#cf142b'), strokeWidth=0.9))
+    d.add(Rect(6.5, 0, 3, 11, fillColor=HexColor('#ffffff'), strokeColor=None))
+    d.add(Rect(0, 4, 16, 3, fillColor=HexColor('#ffffff'), strokeColor=None))
+    d.add(Rect(7.2, 0, 1.6, 11, fillColor=HexColor('#cf142b'), strokeColor=None))
+    d.add(Rect(0, 4.7, 16, 1.6, fillColor=HexColor('#cf142b'), strokeColor=None))
+    return d
+
+def create_japan_flag():
+    d = Drawing(16, 11)
+    d.add(Rect(0, 0, 16, 11, fillColor=HexColor('#ffffff'), strokeColor=HexColor('#64748b'), strokeWidth=0.4))
+    d.add(Circle(8, 5.5, 2.8, fillColor=HexColor('#bc002d'), strokeColor=None))
+    return d
+
+def make_lang_item(flag_func, text_val, style_obj):
+    t = Table([[flag_func(), Paragraph(text_val, style_obj)]], colWidths=[22, None])
+    t.setStyle(TableStyle([
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('LEFTPADDING', (0,0), (-1,-1), 0),
+        ('RIGHTPADDING', (0,0), (-1,-1), 0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+    ]))
+    return t
+
 # --- SKETCHY TIMELINE BULLET ICONS (EXCALIDRAW STYLE) ---
-def create_sketchy_radio_button():
+def create_sketchy_list_bullet():
     d = Drawing(14, 14)
-    # Wobbly outer circle
-    d.add(Circle(7, 7, 5.5, fillColor=None, strokeColor=HexColor('#14b8a6'), strokeWidth=1))
-    # Solid inner dot
-    d.add(Circle(7, 7, 2.2, fillColor=HexColor('#6366f1'), strokeColor=None))
+    d.add(Circle(7, 7, 3, fillColor=HexColor('#14b8a6'), strokeColor=None))
     return d
 
 def create_sketchy_sub_bullet():
     d = Drawing(14, 14)
-    # Wobbly nested hollow circle
-    d.add(Circle(7, 7, 3.8, fillColor=None, strokeColor=HexColor('#6366f1'), strokeWidth=1))
+    d.add(Circle(7, 7, 2, fillColor=HexColor('#6366f1'), strokeColor=None))
     return d
 
 # Helper to build contact text cells
@@ -215,6 +250,19 @@ def build_pdf(filename):
         keepWithNext=True
     )
     
+    edu_title_style = ParagraphStyle(
+        'EduTitleText',
+        parent=styles['Normal'],
+        fontName='ArchitectsDaughter-Bold',
+        fontSize=10.5,
+        leading=14,
+        textColor=off_white,
+        spaceBefore=4,
+        spaceAfter=2,
+        keepWithNext=True
+    )
+    
+    # Right-aligned for job headers
     date_style = ParagraphStyle(
         'JobDateText',
         parent=styles['Normal'],
@@ -223,6 +271,19 @@ def build_pdf(filename):
         leading=14,
         textColor=slate_grey,
         alignment=TA_RIGHT,
+        spaceBefore=0,
+        spaceAfter=0,
+        keepWithNext=True
+    )
+    
+    # Left-aligned for certificates/projects columns
+    date_left_style = ParagraphStyle(
+        'DateLeftText',
+        parent=styles['Normal'],
+        fontName='ArchitectsDaughter-Bold',
+        fontSize=9.5,
+        leading=14,
+        textColor=slate_grey,
         spaceBefore=0,
         spaceAfter=0,
         keepWithNext=True
@@ -284,10 +345,10 @@ def build_pdf(filename):
 
     # Job Header Table builders
     def make_job_header(title_text, dates_text):
-        radio = create_sketchy_radio_button()
+        bullet = create_sketchy_list_bullet()
         title_p = Paragraph(title_text, comp_title_style)
         date_p = Paragraph(dates_text, date_style)
-        t = Table([[radio, title_p, date_p]], colWidths=[18, 390, 124])
+        t = Table([[bullet, title_p, date_p]], colWidths=[18, 390, 124])
         t.setStyle(TableStyle([
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -314,8 +375,7 @@ def build_pdf(filename):
     story = []
     
     # ------------------ HEADER SECTION ------------------
-
-    
+    story.append(Spacer(1, 10))
     story.append(Paragraph("K Y A W T &nbsp; M A Y &nbsp; H L A I N G &nbsp; ( P I N K Y )", title_style))
     
     email_html = '<a href="mailto:pinky.hlaing173@gmail.com"><font color="#14b8a6"><u>pinky.hlaing173@gmail.com</u></font></a>'
@@ -360,19 +420,14 @@ def build_pdf(filename):
     
     ieee_html = '<a href="https://ieeexplore.ieee.org/document/8920931"><font color="#14b8a6"><u>https://ieeexplore.ieee.org/document/8920931</u></font></a>'
     
-    edu_text1 = (
-        "<b>Master of Computer Science In High-Performance Computing ( M.C.Sc )</b><br/>"
-        "2017 - 2019 • <i>University of Information Technology, Yangon, Myanmar</i><br/>"
-        f"Thesis Paper: \"Electricity Billing System using Ethereum and Firebase\" ({ieee_html})"
-    )
-    story.append(Paragraph(edu_text1, norm_text_style))
-    story.append(Spacer(1, 2))
+    story.append(Paragraph("Master of Computer Science In High-Performance Computing ( M.C.Sc )", edu_title_style))
+    story.append(Paragraph("2017 - 2019 • <i>University of Information Technology, Yangon, Myanmar</i>", date_left_style))
+    story.append(Paragraph(f"Thesis Paper: \"Electricity Billing System using Ethereum and Firebase\" ({ieee_html})", norm_text_style))
+    story.append(Spacer(1, 4))
     
-    edu_text2 = (
-        "<b>Bachelor of Computer Science In High-Performance Computing ( B.C.Sc )</b><br/>"
-        "2012 - 2017 • <i>University of Information Technology, Yangon, Myanmar</i>"
-    )
-    story.append(Paragraph(edu_text2, norm_text_style))
+    story.append(Paragraph("Bachelor of Computer Science In High-Performance Computing ( B.C.Sc )", edu_title_style))
+    story.append(Paragraph("2012 - 2017 • <i>University of Information Technology, Yangon, Myanmar</i>", date_left_style))
+    story.append(Spacer(1, 4))
     
     # ------------------ EXPERIENCE ------------------
     story.append(Paragraph("EXPERIENCE", section_title_style))
@@ -380,53 +435,60 @@ def build_pdf(filename):
     # 1. AMPTALK
     amptalk_company = "<b>Senior Mobile Engineer</b> • <a href='https://www.linkedin.com/company/amptalk/'><font color='#14b8a6'><u>Amptalk Co., Ltd</u></font></a>"
     story.append(make_job_header(amptalk_company, "August 2025 - Present"))
-    story.append(Paragraph("• Spearheaded the development of VoIP communication software integration in iOS using Swift and Flutter.", bullet_style))
-    story.append(Paragraph("• Scaled client-side audio streaming pipelines, integrating audio session guidelines for smooth call handoffs.", bullet_style))
-    story.append(Paragraph("• Deployed cloud backend integration modules utilizing Node.js, Typescript, and AWS.", bullet_style))
+    story.append(Paragraph("Architecting scalable audio capture and analytics applications for enterprise sales summary integrations on the Analysis Mobile team.", norm_text_style))
+    story.append(Paragraph("• <b>Core Mobile Recorder:</b> Architected a robust, production-grade meeting voice recorder application in Flutter, using the record package for high-fidelity audio capture.", bullet_style))
+    story.append(Paragraph("• <b>OS Audio Management:</b> Implemented platform-level audio session logic to handle background recording modes and graceful recovery during phone call interruptions.", bullet_style))
+    story.append(Paragraph("• <b>Background Transfer:</b> Designed resilient upload queues that transfer chunked audio files to transcription servers in the background.", bullet_style))
+    story.append(Paragraph("• <b>Flutter Codebase Standards:</b> Leading code reviews and standardizing clean architectures for the Analysis Mobile division to ensure code modularity.", bullet_style))
+    story.append(Paragraph("<b>Project Link:</b> [ <a href='https://apps.apple.com/jp/app/amptalk-analysis/id6738689188'><font color='#14b8a6'><u>App Store</u></font></a> ]", bullet_style))
     story.append(Paragraph("<b>Skills:</b> Flutter, Dart, Swift, Firebase, AWS, Node.js, TypeScript, Notion, Linear", tag_style))
     story.append(Spacer(1, 4))
 
     # 2. OPN THAILAND
+    opn_block = []
     opn_company = "<b>Senior Software Engineer</b> • <a href='https://www.linkedin.com/company/opn-co/'><font color='#14b8a6'><u>Opn Thailand Co., Ltd</u></font></a>"
-    story.append(make_job_header(opn_company, "April 2024 - July 2025"))
-    story.append(make_sub_job_header("<font color='#14b8a6'><b>Software Engineer</b></font>", "July 2022 - April 2024"))
+    opn_block.append(make_job_header(opn_company, "April 2024 - July 2025"))
+    opn_block.append(make_sub_job_header("<font color='#14b8a6'><b>Software Engineer</b></font>", "July 2022 - April 2024"))
     
-    story.append(Paragraph("<b>Key Projects</b>", comp_title_style))
-    story.append(Paragraph("• <b>TICKETIER</b>, a mobile app for ticketing system", bullet_style))
-    story.append(Paragraph("◦ Developed a comprehensive ticketing platform, focusing on the mobile application to enhance user accessibility and engagement.", sub_bullet_style))
-    story.append(Paragraph("◦ <b>Responsibilities:</b>", sub_bullet_style))
-    story.append(Paragraph("▪ Designed and implemented mobile app features that streamline the ticket purchasing process, enabling users to easily browse events, and make secure payments.", sub_bullet_style))
-    story.append(Paragraph("▪ Managed the integration of payment gateways to ensure secure and efficient transactions.", sub_bullet_style))
-    story.append(Paragraph("▪ Managed App Store submissions, addressing feedback, ensuring compliance with guidelines, and delivering timely updates.", sub_bullet_style))
-    story.append(Paragraph("◦ <b>Outcome:</b> Successfully delivered a user-friendly mobile application that increased ticket sales and improved customer satisfaction by providing a seamless booking experience.", sub_bullet_style))
+    opn_block.append(Paragraph("<b>Key Projects</b>", comp_title_style))
+    opn_block.append(Paragraph("• <b>TICKETIER</b>, a mobile app for ticketing system", bullet_style))
+    opn_block.append(Paragraph("• Developed a comprehensive ticketing platform, focusing on the mobile application to enhance user accessibility and engagement.", sub_bullet_style))
+    opn_block.append(Paragraph("• <b>Responsibilities:</b>", sub_bullet_style))
+    opn_block.append(Paragraph("- Designed and implemented mobile app features that streamline the ticket purchasing process, enabling users to easily browse events, and make secure payments.", sub_bullet_style))
+    opn_block.append(Paragraph("- Managed the integration of payment gateways to ensure secure and efficient transactions.", sub_bullet_style))
+    opn_block.append(Paragraph("- Managed App Store submissions, addressing feedback, ensuring compliance with guidelines, and delivering timely updates.", sub_bullet_style))
+    opn_block.append(Paragraph("• <b>Outcome:</b> Successfully delivered a user-friendly mobile application that increased ticket sales and improved customer satisfaction by providing a seamless booking experience.", sub_bullet_style))
+    opn_block.append(Paragraph("<b>Project Link:</b> [ <a href='https://apps.apple.com/us/app/ticketier-show-event-tickets/id6476260768'><font color='#14b8a6'><u>App Store</u></font></a> ]", sub_bullet_style))
     
-    story.append(Paragraph("• <b>Wallet as a Service</b>", bullet_style))
-    story.append(Paragraph("◦ Responsible for developing iOS applications on the Wallet as a Service (WaaS) team, focusing on e-wallet solutions for clients.", sub_bullet_style))
-    story.append(Paragraph("◦ Collaborated with backend teams to integrate secure payment processing via Omise, ensuring a smooth transaction experience for users.", sub_bullet_style))
-    story.append(Paragraph("<b>Skills:</b> Flutter, SwiftUI, Swift, Firebase Authentication, Firebase Remote Config, Firebase Analytics, Jira, Confluence, Figma, Postman, Github, Git Action, Fastlane", tag_style))
+    opn_block.append(Paragraph("• <b>Wallet as a Service</b>", bullet_style))
+    opn_block.append(Paragraph("• Responsible for developing iOS applications on the Wallet as a Service (WaaS) team, focusing on e-wallet solutions for clients.", sub_bullet_style))
+    opn_block.append(Paragraph("• Collaborated with backend teams to integrate secure payment processing via Omise, ensuring a smooth transaction experience for users.", sub_bullet_style))
+    opn_block.append(Paragraph("<b>Skills:</b> Flutter, SwiftUI, Swift, Firebase Authentication, Firebase Remote Config, Firebase Analytics, Jira, Confluence, Figma, Postman, Github, Git Action, Fastlane", tag_style))
+    story.append(KeepTogether(opn_block))
     story.append(Spacer(1, 4))
     
-    # Page Break before One Atkhyar to match page flows
-    story.append(PageBreak())
-    
     # 3. ONE ATKHYAR
+    atkhyar_block = []
     atkhyar_company = "<b>Full-Stack Developer</b> • <a href='https://atkhayar.com/'><font color='#14b8a6'><u>One Atkhyar Co., Ltd</u></font></a>"
-    story.append(make_job_header(atkhyar_company, "August 2019 - June 2022"))
+    atkhyar_block.append(make_job_header(atkhyar_company, "August 2019 - June 2022"))
     
-    story.append(Paragraph("<b>Key Projects</b>", comp_title_style))
-    story.append(Paragraph("• <b>Shi Del</b>, a lifestyle app", bullet_style))
-    story.append(Paragraph("◦ Developed Shi Del from the ground up, creating both backend and frontend architecture and managing deployment across platforms.", sub_bullet_style))
-    story.append(Paragraph("◦ <b>Contributions:</b> Built backend services, crafted a user-friendly frontend, and handled deployments on both the App Store and Play Store.", sub_bullet_style))
-    story.append(Paragraph("◦ <b>Outcome:</b> Successfully launched and scaled the app, providing users with reliable, personalized experience.", sub_bullet_style))
+    atkhyar_block.append(Paragraph("<b>Key Projects</b>", comp_title_style))
+    atkhyar_block.append(Paragraph("• <font color='#14b8a6'><b>Shi Del</b></font>, a lifestyle app", bullet_style))
+    atkhyar_block.append(Paragraph("• Developed Shi Del from the ground up, creating both backend and frontend architecture and managing deployment across platforms.", sub_bullet_style))
+    atkhyar_block.append(Paragraph("• <b>Contributions:</b> Built backend services, crafted a user-friendly frontend, and handled deployments on both the App Store and Play Store.", sub_bullet_style))
+    atkhyar_block.append(Paragraph("• <b>Outcome:</b> Successfully launched and scaled the app, providing users with reliable, personalized experience.", sub_bullet_style))
+    atkhyar_block.append(Paragraph("<b>Project Link:</b> [ <a href='https://apps.apple.com/jp/app/shi-del/id1612929510'><font color='#14b8a6'><u>App Store</u></font></a> ]", sub_bullet_style))
     
-    story.append(Paragraph("• <b>Chat Chin</b>, Myanmar's no. 1 car servicing app plus emergency assistance", bullet_style))
-    story.append(Paragraph("◦ Developed Chat Chin app from the ground up, creating both backend and frontend architecture and managing deployment across platform.", sub_bullet_style))
-    story.append(Paragraph("◦ <b>Contributions:</b>", sub_bullet_style))
-    story.append(Paragraph("▪ Implemented a search feature that allows users to find businesses by location, enhancing discoverability.", sub_bullet_style))
-    story.append(Paragraph("▪ Developed a data listing feature, integrating crawled data to provide up-to-date information on car services.", sub_bullet_style))
-    story.append(Paragraph("▪ Included functionality for users to add reviews, promoting community engagement and feedback.", sub_bullet_style))
-    story.append(Paragraph("◦ <b>Outcome:</b> Successfully launched and scaled the app, offering users reliable car servicing and emergency assistance with a personalized experience.", sub_bullet_style))
-    story.append(Paragraph("<b>Skills:</b> Flutter, Ionic, Firebase Authentication, Firestore, Firebase Functions, Firebase Storage, Firebase Analytics, Jira, Confluence, Figma, Gitlab, GCP, Algolia, Typescript, Angular", tag_style))
+    atkhyar_block.append(Paragraph("• <font color='#14b8a6'><b>Chat Chin</b></font>, Myanmar's no. 1 car servicing app plus emergency assistance", bullet_style))
+    atkhyar_block.append(Paragraph("• Developed Chat Chin app from the ground up, creating both backend and frontend architecture and managing deployment across platform.", sub_bullet_style))
+    atkhyar_block.append(Paragraph("• <b>Contributions:</b>", sub_bullet_style))
+    atkhyar_block.append(Paragraph("- Implemented a search feature that allows users to find businesses by location, enhancing discoverability.", sub_bullet_style))
+    atkhyar_block.append(Paragraph("- Developed a data listing feature, integrating crawled data to provide up-to-date information on car services.", sub_bullet_style))
+    atkhyar_block.append(Paragraph("- Included functionality for users to add reviews, promoting community engagement and feedback.", sub_bullet_style))
+    atkhyar_block.append(Paragraph("• <b>Outcome:</b> Successfully launched and scaled the app, offering users reliable car servicing and emergency assistance with a personalized experience.", sub_bullet_style))
+    atkhyar_block.append(Paragraph("<b>Project Link:</b> [ <a href='https://atkhayar.com/'><font color='#14b8a6'><u>Website</u></font></a> ]", sub_bullet_style))
+    atkhyar_block.append(Paragraph("<b>Skills:</b> Flutter, Ionic, Firebase Authentication, Firestore, Firebase Functions, Firebase Storage, Firebase Analytics, Jira, Confluence, Figma, Gitlab, GCP, Algolia, Typescript, Angular", tag_style))
+    story.append(KeepTogether(atkhyar_block))
     story.append(Spacer(1, 4))
     
     # 4. CLOUD SOURCE MYANMAR
@@ -445,7 +507,7 @@ def build_pdf(filename):
     story.append(Paragraph("• Researched on network vendor product.", bullet_style))
     story.append(Paragraph("<b>Skills:</b> HTML, CSS, jQuery, Java Spring MVC, MyBatis, MySQL", tag_style))
     
-    story.append(PageBreak())
+    story.append(Spacer(1, 4))
     
     # ------------------ PERSONAL PROJECTS ------------------
     story.append(Paragraph("PERSONAL PROJECTS", section_title_style))
@@ -456,7 +518,7 @@ def build_pdf(filename):
     
     projects_data = [
         [
-            Paragraph("<b>2023</b>", date_style),
+            Paragraph("<b>2023</b>", date_left_style),
             Paragraph(
                 "<b>Daily Motivation App (SwiftUI + Firebase + Appstore)</b><br/>"
                 f"Link: {testflight_html}<br/>"
@@ -466,7 +528,7 @@ def build_pdf(filename):
             )
         ],
         [
-            Paragraph("<b>2021</b>", date_style),
+            Paragraph("<b>2021</b>", date_left_style),
             Paragraph(
                 "<b>News App (Flutter + Google Ads + API)</b><br/>"
                 f"Link: {playstore_html}<br/>"
@@ -476,7 +538,7 @@ def build_pdf(filename):
             )
         ],
         [
-            Paragraph("<b>2021</b>", date_style),
+            Paragraph("<b>2021</b>", date_left_style),
             Paragraph(
                 "<b>Chrome Dino App (Flutter + Google Ads)</b><br/>"
                 "This is the replicate version of the chrome dino app. I teamed up with my friend to develop this. "
@@ -485,7 +547,7 @@ def build_pdf(filename):
             )
         ],
         [
-            Paragraph("<b>2021</b>", date_style),
+            Paragraph("<b>2021</b>", date_left_style),
             Paragraph(
                 "<b>Note Taking App (Ionic Cordova + Firebase)</b><br/>"
                 f"Link: {notetaking_html}<br/>"
@@ -494,7 +556,7 @@ def build_pdf(filename):
             )
         ],
         [
-            Paragraph("<b>2016</b>", date_style),
+            Paragraph("<b>2016</b>", date_left_style),
             Paragraph(
                 "<b>Island Cruise Booking Website (PHP + MYSQL)</b><br/>"
                 "This website provides an island cruise booking system to users. I teamed up with my friend to develop "
@@ -521,11 +583,11 @@ def build_pdf(filename):
     credly_html = '<a href="https://www.credly.com/badges/314a6a4e-8b66-437a-9f7d-d75a9f38d05f"><font color="#14b8a6"><u>314a6a4e-8b66-437a-9f7d-d75a9f38d05f</u></font></a>'
     
     certs_data = [
-        [Paragraph("<b>2026</b>", date_style), Paragraph(f"AWS Certified Solutions Architect – Associate (Credly ID: {credly_html})", norm_text_style)],
-        [Paragraph("<b>2020</b>", date_style), Paragraph("AWS Cloud Practitioner (CLF-C01)<br/><font color='#64748b'>LinuxAcademy</font>", norm_text_style)],
-        [Paragraph("<b>2019</b>", date_style), Paragraph("Chinese Proficiency Test (HSK) Level 5", norm_text_style)],
-        [Paragraph("<b>2017</b>", date_style), Paragraph("Fundamental Information Technology Engineer Examination<br/><font color='#64748b'>Information Technology Professional Examination Council</font>", norm_text_style)],
-        [Paragraph("<b>2016</b>", date_style), Paragraph("Information Technology Passport Examination<br/><font color='#64748b'>Information Technology Professional Examination Council</font>", norm_text_style)]
+        [Paragraph("<b>2026</b>", date_left_style), Paragraph(f"AWS Certified Solutions Architect – Associate (Credly ID: {credly_html})", norm_text_style)],
+        [Paragraph("<b>2020</b>", date_left_style), Paragraph("AWS Cloud Practitioner (CLF-C01)<br/><font color='#64748b'>LinuxAcademy</font>", norm_text_style)],
+        [Paragraph("<b>2019</b>", date_left_style), Paragraph("Chinese Proficiency Test (HSK) Level 5", norm_text_style)],
+        [Paragraph("<b>2017</b>", date_left_style), Paragraph("Fundamental Information Technology Engineer Examination<br/><font color='#64748b'>Information Technology Professional Examination Council</font>", norm_text_style)],
+        [Paragraph("<b>2016</b>", date_left_style), Paragraph("Information Technology Passport Examination<br/><font color='#64748b'>Information Technology Professional Examination Council</font>", norm_text_style)]
     ]
     certs_table = Table(certs_data, colWidths=[60, 472])
     certs_table.setStyle(TableStyle([
@@ -538,14 +600,12 @@ def build_pdf(filename):
     story.append(certs_table)
     story.append(Spacer(1, 4))
     
-    story.append(PageBreak())
-    
     # ------------------ TRAINING ------------------
     story.append(Paragraph("TRAINING", section_title_style))
     
     trainings_data = [
         [
-            Paragraph("<b>Sep 2014 -<br/>Oct 2014</b>", date_style),
+            Paragraph("<b>Sep 2014 -<br/>Oct 2014</b>", date_left_style),
             Paragraph(
                 "<b>Android Mobile Application</b><br/>"
                 "Training Institute: KOREA INTERNATIONAL COOPERATION AGENCY (KOICA)<br/>"
@@ -554,7 +614,7 @@ def build_pdf(filename):
             )
         ],
         [
-            Paragraph("<b>Oct 13 2016 -<br/>Oct 21 2016</b>", date_style),
+            Paragraph("<b>Oct 13 2016 -<br/>Oct 21 2016</b>", date_left_style),
             Paragraph(
                 "<b>Android Game with Arduino Microcontroller Basic Course</b><br/>"
                 "Training Institute: KOREA INTERNATIONAL COOPERATION AGENCY (KOICA)<br/>"
@@ -563,7 +623,7 @@ def build_pdf(filename):
             )
         ],
         [
-            Paragraph("<b>May 30 2016 -<br/>July 15 2016</b>", date_style),
+            Paragraph("<b>May 30 2016 -<br/>July 15 2016</b>", date_left_style),
             Paragraph(
                 "<b>IT Service Management</b><br/>"
                 "Training Institute: HITACHI, Ltd.,<br/>"
@@ -572,7 +632,7 @@ def build_pdf(filename):
             )
         ],
         [
-            Paragraph("<b>Jan 23 2017 -<br/>Mar 03 2017</b>", date_style),
+            Paragraph("<b>Jan 23 2017 -<br/>Mar 03 2017</b>", date_left_style),
             Paragraph(
                 "<b>Bigdata IoT/Pentaho training</b><br/>"
                 "Training Institute: HITACHI, Ltd.,<br/>"
@@ -581,7 +641,7 @@ def build_pdf(filename):
             )
         ],
         [
-            Paragraph("<b>Jan 21 2017 -<br/>Aug 12 2017</b>", date_style),
+            Paragraph("<b>Jan 21 2017 -<br/>Aug 12 2017</b>", date_left_style),
             Paragraph(
                 "<b>Enterprise Foundation Network Associate</b><br/>"
                 "Training Institute: Vision To Motion Myanmar CO., LTD<br/>"
@@ -606,8 +666,8 @@ def build_pdf(filename):
     story.append(Paragraph("LANGUAGE SKILLS", section_title_style))
     
     langs_data = [
-        [Paragraph("<b>Myanmar</b> (Native)", norm_text_style), Paragraph("<b>Chinese</b> (Intermediate)", norm_text_style)],
-        [Paragraph("<b>English</b> (Intermediate)", norm_text_style), Paragraph("<b>Japanese</b> (N4 Level)", norm_text_style)]
+        [make_lang_item(create_myanmar_flag, "<b>Myanmar</b> (Native)", norm_text_style), make_lang_item(create_china_flag, "<b>Chinese</b> (Intermediate)", norm_text_style)],
+        [make_lang_item(create_uk_flag, "<b>English</b> (Intermediate)", norm_text_style), make_lang_item(create_japan_flag, "<b>Japanese</b> (N4 Level)", norm_text_style)]
     ]
     langs_table = Table(langs_data, colWidths=[260, 272])
     langs_table.setStyle(TableStyle([
